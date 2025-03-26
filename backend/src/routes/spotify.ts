@@ -17,7 +17,7 @@ const SPOTIFY_SCOPES = [
 // Redirect to Spotify authorization
 router.get('/connect/spotify', (_req: Request, res: Response) => {
   const state = Math.random().toString(36).substring(7);
-  const redirectUri = `${process.env.FRONTEND_URL}/api/connect/spotify/callback`;
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:3000/auth/spotify/callback';
 
   const authUrl = new URL('https://accounts.spotify.com/authorize');
   authUrl.searchParams.append('response_type', 'code');
@@ -26,7 +26,7 @@ router.get('/connect/spotify', (_req: Request, res: Response) => {
   authUrl.searchParams.append('redirect_uri', redirectUri);
   authUrl.searchParams.append('state', state);
 
-  return res.redirect(authUrl.toString());
+  return res.redirect(302, authUrl.toString());
 });
 
 // Handle Spotify OAuth callback

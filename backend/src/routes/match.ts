@@ -1,15 +1,21 @@
 import express from 'express';
-import { User } from '../models/User';
+import { AppDataSource } from '../config/database';
+import { TypeORMUser } from '../models/TypeORMUser';
 import { getSpotifyPlaylists } from '../utils/spotify';
 import { findMatches } from '../utils/matching';
+import { Not, IsNull } from 'typeorm';
 
 const router = express.Router();
+const userRepository = AppDataSource.getRepository(TypeORMUser);
 
 // Get matches for the current user
 router.get('/matches', async (req, res) => {
   try {
     // Get current user
-    const currentUser = await User.findById((req as any).user?.id);
+    const currentUser = await userRepository.findOne({
+      where: { id: (req as any).user?.id }
+    });
+    
     if (!currentUser) {
       return res.status(401).json({ message: 'User not found' });
     }
@@ -19,16 +25,18 @@ router.get('/matches', async (req, res) => {
     const currentUserPlaylistIds = currentUserPlaylists.map((playlist: { id: string }) => playlist.id);
 
     // Get all other users with Spotify connected
-    const otherUsers = await User.find({
-      _id: { $ne: currentUser._id },
-      spotifyId: { $exists: true }
+    const otherUsers = await userRepository.find({
+      where: {
+        id: Not(currentUser.id),
+        spotifyId: Not(IsNull())
+      }
     });
 
     // Find matches
     const matches = await findMatches(
       currentUserPlaylistIds,
       otherUsers.map(user => ({
-        _id: user._id.toString(),
+        _id: user.id,
         username: user.username,
         spotifyId: user.spotifyId || ''
       }))

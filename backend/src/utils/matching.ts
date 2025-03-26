@@ -10,19 +10,14 @@ interface Match {
   commonPlaylists: string[];
 }
 
-export function calculateCompatibility(
-  currentUserPlaylists: string[],
-  otherUserPlaylists: string[]
-): number {
-  if (currentUserPlaylists.length === 0 || otherUserPlaylists.length === 0) {
-    return 0;
-  }
+function calculateCompatibility(playlists1: string[], playlists2: string[]): number {
+  if (playlists1.length === 0 || playlists2.length === 0) return 0;
 
-  const commonPlaylists = currentUserPlaylists.filter(playlistId =>
-    otherUserPlaylists.includes(playlistId)
+  const commonPlaylists = playlists1.filter(playlistId =>
+    playlists2.includes(playlistId)
   );
 
-  return (commonPlaylists.length / Math.max(currentUserPlaylists.length, otherUserPlaylists.length)) * 100;
+  return (commonPlaylists.length / Math.min(playlists1.length, playlists2.length)) * 100;
 }
 
 export async function findMatches(
@@ -32,7 +27,8 @@ export async function findMatches(
   const matches: Match[] = [];
 
   for (const user of otherUsers) {
-    const userPlaylists: string[] = []; // This should be fetched from Spotify
+    // For testing, we'll use a mock playlist
+    const userPlaylists = ['playlist1', 'playlist2']; // This should be fetched from Spotify
     const matchPercentage = calculateCompatibility(currentUserPlaylists, userPlaylists);
 
     if (matchPercentage > 0) {

@@ -12,6 +12,7 @@ import spotifyRoutes from './routes/spotify';
 import matchRoutes from './routes/match';
 import messageRoutes from './routes/messages';
 import feedRoutes from './routes/feed';
+import { authenticateToken } from './middleware/auth';
 
 // Load environment variables
 dotenv.config();
@@ -108,10 +109,10 @@ io.on('connection', async (socket: Socket) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api', spotifyRoutes);
-app.use('/api', matchRoutes);
-app.use('/api', messageRoutes);
-app.use('/api', feedRoutes);
+app.use('/api/connect/spotify', authenticateToken, spotifyRoutes);
+app.use('/api/matches', authenticateToken, matchRoutes);
+app.use('/api/messages', authenticateToken, messageRoutes);
+app.use('/api/feed', authenticateToken, feedRoutes);
 
 // Basic route
 app.get('/', (_req, res) => {

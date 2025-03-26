@@ -1,14 +1,15 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { Message } from '../models/Message';
+import { AuthenticatedRequest } from '../types/custom';
 
 const router = express.Router();
 const messageRepository = AppDataSource.getRepository(Message);
 
 // Get messages between two users
-router.get('/messages', async (req: Request, res: Response) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const senderId = (req as any).user?.id; // Assuming you have authentication middleware
+    const senderId = req.user?.id;
     const receiverId = req.query.receiverId as string;
 
     if (!senderId || !receiverId) {
@@ -31,9 +32,9 @@ router.get('/messages', async (req: Request, res: Response) => {
 });
 
 // Send a message
-router.post('/messages', async (req: Request, res: Response) => {
+router.post('/', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const senderId = (req as any).user?.id;
+    const senderId = req.user?.id;
     const { receiverId, content } = req.body;
 
     if (!senderId || !receiverId || !content) {

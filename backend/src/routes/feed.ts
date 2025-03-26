@@ -8,7 +8,7 @@ const router = express.Router();
 const feedRepository = AppDataSource.getRepository(FeedPost);
 
 // Create a new feed post
-router.post('/feed', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.id;
     const { songId, comment } = req.body;
@@ -32,7 +32,7 @@ router.post('/feed', async (req: AuthenticatedRequest, res: Response) => {
 });
 
 // Get user's feed
-router.get('/feed', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) {

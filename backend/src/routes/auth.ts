@@ -3,53 +3,38 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../config/database';
 import { TypeORMUser } from '../models/TypeORMUser';
+import { Request, Response } from 'express';
 
 const router = express.Router();
 const userRepository = AppDataSource.getRepository(TypeORMUser);
 
-// Register route
-router.post('/register', async (req, res) => {
+// Register a new user
+router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { username, email, password } = req.body;
-
-    // Validate input
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
+    const { email, password, name } = req.body;
 
     // Check if user already exists
-    const existingUser = await userRepository.findOne({
-      where: [
-        { email },
-        { username }
-      ]
-    });
-
+    const existingUser = await userRepository.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({
-        message: existingUser.email === email
-          ? 'Email already registered'
-          : 'Username already taken'
-      });
+      return res.status(400).json({ message: 'User already exists' });
     }
 
     // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create user
     const user = userRepository.create({
-      username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      name
     });
 
     await userRepository.save(user);
 
-    // Generate JWT token
+    // Generate token
     const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your_jwt_secret_here',
+      { id: user.id },
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
 
@@ -57,25 +42,20 @@ router.post('/register', async (req, res) => {
       token,
       user: {
         id: user.id,
-        username: user.username,
-        email: user.email
+        email: user.email,
+        name: user.name
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    return res.status(500).json({ message: 'Error creating user' });
+    console.error('Error registering user:', error);
+    return res.status(500).json({ message: 'Error registering user' });
   }
 });
 
-// Login route
-router.post('/login', async (req, res) => {
+// Login user
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
 
     // Find user
     const user = await userRepository.findOne({ where: { email } });
@@ -83,16 +63,16 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Verify password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT token
+    // Generate token
     const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your_jwt_secret_here',
+      { id: user.id },
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
 
@@ -100,13 +80,13 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         id: user.id,
-        username: user.username,
-        email: user.email
+        email: user.email,
+        name: user.name
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({ message: 'Error during login' });
+    console.error('Error logging in:', error);
+    return res.status(500).json({ message: 'Error logging in' });
   }
 });
 

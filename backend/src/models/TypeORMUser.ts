@@ -5,14 +5,17 @@ export class TypeORMUser {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  username: string;
-
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column()
   password: string;
+
+  @Column({ nullable: true, default: 'Anonymous User' })
+  name: string;
+
+  @Column()
+  username: string;
 
   @Column({ nullable: true })
   spotifyId?: string;
