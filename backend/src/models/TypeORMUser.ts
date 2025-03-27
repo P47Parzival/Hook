@@ -14,9 +14,6 @@ export class TypeORMUser {
   @Column({ nullable: true, default: 'Anonymous User' })
   name: string;
 
-  @Column()
-  username: string;
-
   @Column({ nullable: true })
   spotifyId?: string;
 

@@ -48,7 +48,14 @@ router.post('/register', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error registering user:', error);
-    return res.status(500).json({ message: 'Error registering user' });
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    return res.status(500).json({ 
+      message: 'Error registering user',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

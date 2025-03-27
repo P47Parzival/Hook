@@ -37,7 +37,7 @@ router.get('/matches', async (req, res) => {
       currentUserPlaylistIds,
       otherUsers.map(user => ({
         _id: user.id,
-        username: user.username,
+        name: user.name,
         spotifyId: user.spotifyId || ''
       }))
     );

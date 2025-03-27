@@ -1,6 +1,6 @@
 interface User {
   _id: string;
-  username: string;
+  name: string;
   spotifyId: string;
 }
 
