@@ -4,6 +4,7 @@ import { AppDataSource } from '../config/database';
 const API_URL = 'http://localhost:3001/api';
 let authToken: string;
 let registeredEmail: string;
+let testReceiverId: string;
 
 describe('API Tests', () => {
   beforeAll(async () => {
@@ -46,6 +47,17 @@ describe('API Tests', () => {
       expect(response.data).toHaveProperty('token');
       authToken = response.data.token;
     });
+
+    it('should create a test receiver user', async () => {
+      const response = await axios.post(`${API_URL}/auth/register`, {
+        email: `receiver${Date.now()}@example.com`,
+        password: 'testpassword123',
+        name: 'Test Receiver'
+      });
+
+      expect(response.status).toBe(201);
+      testReceiverId = response.data.user.id;
+    });
   });
 
   describe('Spotify Integration', () => {
@@ -84,7 +96,7 @@ describe('API Tests', () => {
       const response = await axios.post(
         `${API_URL}/messages`,
         {
-          receiverId: 'test-receiver-id',
+          receiverId: testReceiverId,
           content: 'Test message'
         },
         {
@@ -98,7 +110,7 @@ describe('API Tests', () => {
     });
 
     it('should get messages', async () => {
-      const response = await axios.get(`${API_URL}/messages?receiverId=test-receiver-id`, {
+      const response = await axios.get(`${API_URL}/messages?receiverId=${testReceiverId}`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
 

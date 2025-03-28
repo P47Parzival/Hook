@@ -1,10 +1,12 @@
 import express, { Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { Message } from '../models/Message';
+import { TypeORMUser } from '../models/TypeORMUser';
 import { AuthenticatedRequest } from '../types/custom';
 
 const router = express.Router();
 const messageRepository = AppDataSource.getRepository(Message);
+const userRepository = AppDataSource.getRepository(TypeORMUser);
 
 // Get messages between two users
 router.get('/', async (req: AuthenticatedRequest, res: Response) => {
@@ -16,12 +18,23 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ message: 'Sender and receiver IDs are required' });
     }
 
+    // Verify both users exist
+    const [sender, receiver] = await Promise.all([
+      userRepository.findOne({ where: { id: senderId } }),
+      userRepository.findOne({ where: { id: receiverId } })
+    ]);
+
+    if (!sender || !receiver) {
+      return res.status(404).json({ message: 'One or both users not found' });
+    }
+
     const messages = await messageRepository.find({
       where: [
         { senderId, receiverId },
         { senderId: receiverId, receiverId: senderId }
       ],
-      order: { createdAt: 'ASC' }
+      order: { createdAt: 'ASC' },
+      relations: ['sender', 'receiver']
     });
 
     return res.json(messages);
@@ -41,6 +54,16 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ message: 'Sender ID, receiver ID, and content are required' });
     }
 
+    // Verify both users exist
+    const [sender, receiver] = await Promise.all([
+      userRepository.findOne({ where: { id: senderId } }),
+      userRepository.findOne({ where: { id: receiverId } })
+    ]);
+
+    if (!sender || !receiver) {
+      return res.status(404).json({ message: 'One or both users not found' });
+    }
+
     const message = messageRepository.create({
       senderId,
       receiverId,
@@ -48,7 +71,14 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
     });
 
     await messageRepository.save(message);
-    return res.status(201).json(message);
+
+    // Fetch the saved message with relations
+    const savedMessage = await messageRepository.findOne({
+      where: { id: message.id },
+      relations: ['sender', 'receiver']
+    });
+
+    return res.status(201).json(savedMessage);
   } catch (error) {
     console.error('Error sending message:', error);
     return res.status(500).json({ message: 'Error sending message' });
