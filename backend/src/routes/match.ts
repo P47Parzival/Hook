@@ -9,7 +9,7 @@ const router = express.Router();
 const userRepository = AppDataSource.getRepository(TypeORMUser);
 
 // Get matches for the current user
-router.get('/matches', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Get current user
     const currentUser = await userRepository.findOne({
@@ -20,8 +20,13 @@ router.get('/matches', async (req, res) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
+    // If user doesn't have Spotify connected, return empty matches
+    if (!currentUser.spotifyId) {
+      return res.json([]);
+    }
+
     // Get current user's playlists
-    const currentUserPlaylists = await getSpotifyPlaylists(currentUser.spotifyId || '');
+    const currentUserPlaylists = await getSpotifyPlaylists(currentUser.spotifyId);
     const currentUserPlaylistIds = currentUserPlaylists.map((playlist: { id: string }) => playlist.id);
 
     // Get all other users with Spotify connected
